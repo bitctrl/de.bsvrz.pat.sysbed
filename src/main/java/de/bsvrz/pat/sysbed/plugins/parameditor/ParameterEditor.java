@@ -35,7 +35,8 @@ import de.bsvrz.dav.daf.main.config.AttributeGroup;
 import de.bsvrz.dav.daf.main.config.DataModel;
 import de.bsvrz.dav.daf.main.config.SystemObject;
 import de.bsvrz.pat.sysbed.dataEditor.AbstractEditorPanel;
-import de.bsvrz.pat.sysbed.dataEditor.DataEditorPanel;
+import de.bsvrz.pat.sysbed.dataEditor.ExtendedEditorPanel;
+import de.bsvrz.pat.sysbed.main.JsonSerializer;
 import de.bsvrz.pat.sysbed.preselection.lists.PreselectionListsFilter;
 import de.bsvrz.pat.sysbed.preselection.panel.PreselectionDialog;
 import de.bsvrz.sys.funclib.application.StandardApplication;
@@ -309,7 +310,7 @@ public class ParameterEditor implements StandardApplication {
 			headerPane.add(Box.createHorizontalStrut(10));
 			headerPane.add(Box.createHorizontalGlue());
 
-			_editorPanel = new DataEditorPanel(connection);
+			_editorPanel = new ExtendedEditorPanel(connection);
 			_editorPanel.setEditable(true);
 
 			_frame.getContentPane().add(headerPane, BorderLayout.NORTH);

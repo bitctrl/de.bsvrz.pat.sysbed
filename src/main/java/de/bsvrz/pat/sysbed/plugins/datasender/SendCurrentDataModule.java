@@ -241,6 +241,7 @@ public class SendCurrentDataModule extends ExternalModuleAdapter {
 				datasetEditorFrame.startSendCurrentData();
 			}
 			catch(Exception ex) {
+				ex.printStackTrace();
 				JOptionPane.showMessageDialog(_dialog, ex.getMessage(), "Fehler bei der Anmeldung", JOptionPane.ERROR_MESSAGE);
 			}
 		}

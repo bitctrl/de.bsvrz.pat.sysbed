@@ -30,12 +30,7 @@ package de.bsvrz.pat.sysbed.plugins.archiverequest;
 
 import de.bsvrz.dav.daf.main.DataDescription;
 import de.bsvrz.dav.daf.main.archive.*;
-import de.bsvrz.dav.daf.main.config.Aspect;
-import de.bsvrz.dav.daf.main.config.AttributeGroup;
-import de.bsvrz.dav.daf.main.config.AttributeGroupUsage;
-import de.bsvrz.dav.daf.main.config.DataModel;
-import de.bsvrz.dav.daf.main.config.SystemObject;
-import de.bsvrz.dav.daf.main.config.SystemObjectType;
+import de.bsvrz.dav.daf.main.config.*;
 import de.bsvrz.pat.sysbed.dataview.ArchiveDataTableView;
 import de.bsvrz.pat.sysbed.dataview.DataTableObject;
 import de.bsvrz.pat.sysbed.plugins.api.ButtonBar;
@@ -52,6 +47,8 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
@@ -176,7 +173,7 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 		private JDialog _dialog = null;
 
 		/** Speichert den Zugriff auf das Archivsystem. */
-		private ArchiveRequestManager _archiveRequestManager;
+		private ArchiveRequestManager _currentArchiveRequestManager;
 
 		/** speichert die Datenidentifikationsauswahl */
 		private DataIdentificationChoice _dataIdentificationChoice;
@@ -250,11 +247,13 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 		/** Gibt an, ob der ausgewählte Bereich relativ oder absolut ist. */
 		private JCheckBox _relativeBox;
 
+		private JComboBox<SystemObject> _archiveBox;
+		private ArchiveListener _archiveListener;
+		
 		/* ################# Methoden ################### */
 
 		/** Standardkonstruktor. Erstellt ein Objekt der Klasse. */
 		public StreamBasedArchiveRequestDialog() {
-			_archiveRequestManager = getConnection().getArchive();   // das aktuelle Archivsystem wird geholt
 		}
 
 		/**
@@ -292,10 +291,13 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			String from = "";
 			String to = "";
 			List keyValueList = data.getKeyValueList();
-			for(Iterator iterator = keyValueList.iterator(); iterator.hasNext();) {
-				KeyValueObject keyValueObject = (KeyValueObject)iterator.next();
+			for(Iterator iterator = keyValueList.iterator(); iterator.hasNext(); ) {
+				KeyValueObject keyValueObject = (KeyValueObject) iterator.next();
 				String key = keyValueObject.getKey();
 				String value = keyValueObject.getValue();
+				if(key.equals("archivePid")) {
+					setArchivePid(value);
+				}
 				if(key.equals("priority")) {
 					setPriority(value);
 				}
@@ -335,6 +337,11 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			showDialog();
 		}
 
+		private void setArchivePid(final String value) {
+			_archiveBox.setSelectedItem(null);
+			_archiveBox.setSelectedItem(getConnection().getDataModel().getObject(value));
+		}
+
 		/**
 		 * Startet die Archivanfrage anhand der Einstellungsdaten.
 		 *
@@ -350,12 +357,17 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			ArchiveDataKindCombination archiveDataKindCombination = new ArchiveDataKindCombination(ArchiveDataKind.ONLINE);
 			ArchiveOrder archiveOrder = ArchiveOrder.BY_INDEX;
 			ArchiveRequestOption archiveRequestOption = ArchiveRequestOption.NORMAL;
+			SystemObject archive = getConnection().getDataModel().getConfigurationAuthority();
+
 
 			List keyValueList = settingsData.getKeyValueList();
 			for(Iterator iterator = keyValueList.iterator(); iterator.hasNext();) {
 				KeyValueObject keyValueObject = (KeyValueObject)iterator.next();
 				String key = keyValueObject.getKey();
 				String value = keyValueObject.getValue();
+				if(key.equals("archivePid")) {
+					archive = getConnection().getDataModel().getObject(value);
+				}
 				if(key.equals("priority")) {
 					if(value.equals("Hoch")) {
 						archiveQueryPriority = ArchiveQueryPriority.HIGH;
@@ -449,8 +461,7 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			DataDescription dataDescription = new DataDescription(
 					settingsData.getAttributeGroup(), settingsData.getAspect(), (short)settingsData.getSimulationVariant()
 			);
-
-			_archiveRequestManager = getConnection().getArchive();
+			
 			ArchiveTimeSpecification archiveTimeSpecification = new ArchiveTimeSpecification(timingType, startRelative, intervalStart, intervalEnd);
 
 			List<ArchiveDataSpecification> archiveDataSpecifications = new LinkedList<ArchiveDataSpecification>();
@@ -478,7 +489,9 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			// Erzeugen des Ausgabefensters mit der Online-Tabelle
 			final ArchiveDataTableView dataTableView = new ArchiveDataTableView(settingsData, getConnection(), dataDescription);	// anzeigen der Tabelle
 
-			final ArchiveDataQueryResult queryResult = _archiveRequestManager.request(archiveQueryPriority, archiveDataSpecifications);	 // Anfrage starten
+			ArchiveRequestManager archiveRequestManager = getConnection().getArchive(archive);
+
+			final ArchiveDataQueryResult queryResult = archiveRequestManager.request(archiveQueryPriority, archiveDataSpecifications);	 // Anfrage starten
 			try {
 				if(queryResult.isRequestSuccessful()) {
 					_debug.info("Archivanfrage konnte erfolgreich bearbeitet werden.");
@@ -607,6 +620,15 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			JPanel archivePanel = new JPanel();
 			archivePanel.setBorder(BorderFactory.createTitledBorder("Archivoptionen"));
 			archivePanel.setLayout(new BoxLayout(archivePanel, BoxLayout.Y_AXIS));
+
+			JLabel archiveLabel = new JLabel("Archiv: ");
+			archiveLabel.setLabelFor(_archiveBox);
+			_archiveBox = new JComboBox<>();
+			JPanel archiveBoxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			archiveBoxPanel.add(archiveLabel);
+			archiveBoxPanel.add(Box.createHorizontalStrut(5));
+			archiveBoxPanel.add(_archiveBox);
+			archivePanel.add(archiveBoxPanel);
 
 			// Priorität
 			JPanel priorityPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -800,12 +822,30 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			_dialog.getRootPane().setDefaultButton(_buttonBar.getAcceptButton());
 			pane.add(_buttonBar);
 
-			// Listener, ob das Archivsystem da ist
-			if(!_archiveRequestManager.isArchiveAvailable()) {
-				_buttonBar.getAcceptButton().setEnabled(false);
-				_buttonBar.getAcceptButton().setToolTipText("Das Archivsystem ist nicht verfügbar.");
+			for(SystemObject object : getConnection().getDataModel().getType("typ.archiv").getElements()) {
+				_archiveBox.addItem(object);
 			}
-			_archiveRequestManager.addArchiveAvailabilityListener(new ArchiveListener(_buttonBar.getAcceptButton()));
+
+			_archiveListener = new ArchiveListener(_buttonBar.getAcceptButton());
+
+			_archiveBox.addActionListener(
+					e -> {
+						if(_currentArchiveRequestManager != null) {
+							// Alten Listener entfernen
+							_currentArchiveRequestManager.removeArchiveAvailabilityListener(_archiveListener);
+						}
+						_currentArchiveRequestManager = null;
+						SystemObject selectedItem = (SystemObject) _archiveBox.getSelectedItem();
+						if(selectedItem != null) {
+							_currentArchiveRequestManager = getConnection().getArchive(selectedItem);
+							_currentArchiveRequestManager.addArchiveAvailabilityListener(_archiveListener);
+						}
+						_archiveListener.archiveAvailabilityChanged(_currentArchiveRequestManager);
+					}
+			);
+			
+			_archiveBox.setSelectedItem(getConnection().getDataModel().getConfigurationAuthority());
+
 		}
 
 		private class ArchiveListener implements ArchiveAvailabilityListener {
@@ -817,7 +857,7 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			}
 
 			public void archiveAvailabilityChanged(ArchiveRequestManager archive) {
-				if(archive.isArchiveAvailable()) {
+				if(_currentArchiveRequestManager != null && _currentArchiveRequestManager.isArchiveAvailable()) {
 					_okButton.setEnabled(true);
 					_okButton.setToolTipText(null);
 				}
@@ -1263,8 +1303,13 @@ public class StreamBasedArchiveRequestModule extends ExternalModuleAdapter imple
 			keyValueList.add(new KeyValueObject("requestview", getRequestView()));
 			keyValueList.add(new KeyValueObject("viewsort", getViewSort()));
 			keyValueList.add(new KeyValueObject("oldobj", getUseOldObjects()));
+			keyValueList.add(new KeyValueObject("archivePid", getArchivePid()));
 
 			return keyValueList;
+		}
+
+		private String getArchivePid() {
+			return ((SystemObject)_archiveBox.getSelectedItem()).getPid();
 		}
 
 		/**

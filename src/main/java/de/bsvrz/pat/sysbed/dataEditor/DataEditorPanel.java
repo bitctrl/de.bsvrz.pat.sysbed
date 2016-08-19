@@ -62,6 +62,7 @@ import java.util.List;
  * @see #setData(de.bsvrz.dav.daf.main.Data)
  * @see #setResultData(de.bsvrz.dav.daf.main.ResultData)
  */
+@Deprecated
 public class DataEditorPanel extends AbstractEditorPanel {
 
 	/** ein Zahlenformat */

@@ -239,9 +239,12 @@ public class GenericTestMonitor extends AbstractGUIApplication {
 					final Container contentPane = _dialog.getContentPane();
 					contentPane.add(_label, BorderLayout.CENTER);
 					final JProgressBar bar = new JProgressBar();
-					bar.setBorder(new EmptyBorder(10, 10, 10, 10));
 					bar.setIndeterminate(true);
-					contentPane.add(bar, BorderLayout.SOUTH);
+					Box verticalBox = Box.createVerticalBox();
+					verticalBox.add(Box.createVerticalGlue());
+					verticalBox.add(bar);
+					verticalBox.setBorder(new EmptyBorder(10, 10, 10, 10));
+					contentPane.add(verticalBox, BorderLayout.SOUTH);
 					_dialog.pack();
 					Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 					Rectangle abounds = _dialog.getBounds();

@@ -33,7 +33,6 @@ import de.bsvrz.dav.daf.main.archive.ArchiveDataKind;
 import de.bsvrz.dav.daf.main.archive.TimingType;
 import de.bsvrz.dav.daf.main.config.SystemObject;
 import de.bsvrz.pat.sysbed.dataview.selectionManagement.SelectionManager;
-import de.bsvrz.pat.sysbed.main.SelectionModel;
 import de.bsvrz.pat.sysbed.main.TooltipAndContextUtil;
 
 import javax.swing.*;

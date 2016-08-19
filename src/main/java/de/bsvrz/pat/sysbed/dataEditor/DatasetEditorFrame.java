@@ -46,7 +46,7 @@ import java.awt.event.*;
  *
  * @author Kappich Systemberatung
  * @version $Revision$
- * @see DataEditorPanel
+ * @see AbstractEditorPanel
  */
 public class DatasetEditorFrame extends JFrame {
 
@@ -71,7 +71,7 @@ public class DatasetEditorFrame extends JFrame {
 	/** speichert die aktuellen Systemobjekte für die Anmeldung beim Datenverteiler */
 	private final SystemObject[] _systemObjects;
 
-	/** speichert den {@link DataEditorPanel} */
+	/** speichert den {@link AbstractEditorPanel} */
 	private final AbstractEditorPanel _dataEditorPanel;
 
 	/** Speichert die Rolle für die Anmeldung beim Datenverteiler. Voreingestellt auf "Empfänger". */
@@ -132,7 +132,7 @@ public class DatasetEditorFrame extends JFrame {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setTitle(GenericTestMonitorApplication.getTitle(title, connection));
 
-		_dataEditorPanel = new DataEditorPanel(connection);
+		_dataEditorPanel = new ExtendedEditorPanel(connection);
 
 		_pane = getContentPane();
 		_pane.setLayout(new BorderLayout());
