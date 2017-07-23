@@ -30,6 +30,7 @@ import de.bsvrz.dav.daf.main.Data;
 import de.bsvrz.dav.daf.main.config.AttributeType;
 
 import javax.swing.*;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Collection;
@@ -43,8 +44,15 @@ import java.util.List;
  */
 public class CheckBoxEditorPlugIn extends DataEditorPlugIn{
 
+	private Color _originalCheckBoxBackground;
+
 	@Override
 	public Box createComponent(final Data data, final boolean editable, final List<JButton> additionalButtons) {
+		
+		if(editable && !data.isDefined()){
+			data.asTextValue().setText("Nein");
+		}
+		
 		final Box box;
 		box = Box.createHorizontalBox();
 		box.setBorder(BorderFactory.createEmptyBorder(1,1,1,1));
@@ -88,14 +96,38 @@ public class CheckBoxEditorPlugIn extends DataEditorPlugIn{
 
 	@Override
 	public JComponent createValueBox(final Data data, final boolean editable, final Collection<JButton> additionalButtons, final JLabel suffixBox) {
-		JCheckBox checkBox = new JCheckBox(data.getName(), data.asTextValue().getValueText().equals("Ja"));
+		JCheckBox checkBox = new JCheckBox(data.getName(), !data.asTextValue().getValueText().equals("Nein"));
+		_originalCheckBoxBackground = checkBox.getBackground();
 		checkBox.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
-				data.asTextValue().setText(checkBox.isSelected() ? "Ja" : "Nein");
+				checkBoxModified(data, checkBox, true);
 			}
 		});
+		checkBoxModified(data, checkBox, false);
 		checkBox.setEnabled(editable);
 		return checkBox;
+	}
+
+	public void checkBoxModified(final Data data, final JCheckBox checkBox, boolean update) {
+		try {
+			if(update) {
+				data.asTextValue().setText(checkBox.isSelected() ? "Ja" : "Nein");
+			}
+
+			if(!data.isDefined()) {
+				checkBox.setBackground(_backgroundUndefinedValue);
+			}
+			else {
+				checkBox.setBackground(_originalCheckBoxBackground);
+			}
+		}
+		catch(Exception ex) {
+			_debug.error("Fehler beim Setzen eines Werts", ex);
+			// Wenn beim setzen des Textes ein Fehler auftritt, dann wird der Wert auf "undefiniert" gesetzt
+			// und der Benutzer muss sich Gedanken um den Wert machen
+			data.setToDefault();
+			checkBox.setBackground(_backgroundUndefinedValue);
+		}
 	}
 }

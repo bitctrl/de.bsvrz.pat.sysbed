@@ -43,7 +43,7 @@ public abstract class PlainEditorPlugIn extends DataEditorPlugIn{
 	@Override
 	public Box createComponent(final Data data, final boolean editable, final List<JButton> additionalButtons) {
 		final Box box;
-		box = false ? Box.createVerticalBox() : Box.createHorizontalBox();
+		box = Box.createHorizontalBox();
 		JLabel labelBox = new JLabel(data.getName() + ": ", SwingConstants.TRAILING);
 		box.add(Box.createHorizontalStrut(5));
 		final JLabel suffixBox = new JLabel(data.isPlain() ? data.asTextValue().getSuffixText() : "");

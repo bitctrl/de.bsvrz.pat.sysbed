@@ -26,26 +26,27 @@
 
 package de.bsvrz.pat.sysbed.preselection.lists;
 
+import de.bsvrz.dav.daf.main.config.DataModel;
 import de.bsvrz.dav.daf.main.config.SystemObject;
+import de.bsvrz.dav.daf.main.impl.config.DafConfigurationObject;
 import de.bsvrz.pat.sysbed.main.SelectionModel;
 import de.bsvrz.pat.sysbed.main.TooltipAndContextUtil;
 
 import javax.swing.JList;
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Kappich Systemberatung
  * @version $Revision: 0000 $
  */
-public class SystemObjectList extends JList implements SelectionModel {
+public class SystemObjectList extends JList<SystemObject> implements SelectionModel {
 
 	public SystemObjectList() {
 		TooltipAndContextUtil.createComponentPopupMenu(this);
 	}
 
 	@Override
-	public SystemObject[] getSelectedObjects() {
-		Object[] selectedValues = getSelectedValues();
-		return Arrays.copyOf(selectedValues,selectedValues.length, SystemObject[].class);
+	public List<SystemObject> getSelectedObjects() {
+		return getSelectedValuesList();
 	}
 }

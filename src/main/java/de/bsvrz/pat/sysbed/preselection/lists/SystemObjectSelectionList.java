@@ -36,12 +36,14 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -60,6 +62,7 @@ public class SystemObjectSelectionList extends Box {
 	private static final Debug _debug = Debug.getLogger();
 	private final SystemObjectList _jlist;
 	private final FilterTextField _filterTextField;
+	private final MyListCellRenderer _cellRenderer;
 	private List<? extends SystemObject> _preSelectedValues = Collections.emptyList();
 	private final JLabel _numberOfSelectedObjects;
 	private final JButton _deselectObjects;
@@ -127,10 +130,10 @@ public class SystemObjectSelectionList extends Box {
 					public void mouseMoved(MouseEvent e) {
 						int index = _jlist.locationToIndex(e.getPoint());
 						if(index >= 0) {
-							Object object = _jlist.getModel().getElementAt(index);
+							SystemObject object = _jlist.getModel().getElementAt(index);
 							if(object != null) {
 								try {
-									SystemObject systemObject = (SystemObject) object;
+									SystemObject systemObject = object;
 									String tooltip = TooltipAndContextUtil.getTooltip(systemObject);
 									_jlist.setToolTipText(tooltip);
 								}
@@ -168,23 +171,13 @@ public class SystemObjectSelectionList extends Box {
 			                                public void valueChanged(final ListSelectionEvent e) {
 				                                if(!e.getValueIsAdjusting()) {
 					                                updateHeader();
-					                                _preSelectedValues = Arrays.asList(_jlist.getSelectedObjects());
+					                                _preSelectedValues = _jlist.getSelectedObjects();
 				                                }
 			                                }
 		                                });
 
-		_jlist.setCellRenderer(new DefaultListCellRenderer(){
-			                       @Override
-			                       public Component getListCellRendererComponent(final JList<?> list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-				                       SystemObject obj = (SystemObject) value;
-				                       super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				                       if(_listRenderer != null) {
-					                       setText(_listRenderer.getText(obj));
-					                       setIcon(_listRenderer.getIcon(obj));
-				                       }
-				                       return this;
-			                       }
-		                       });
+		_cellRenderer = new MyListCellRenderer();
+		_jlist.setCellRenderer(_cellRenderer);
 
 		add(headlineBox);
 		add(Box.createRigidArea(new Dimension(0, 3)));
@@ -258,55 +251,105 @@ public class SystemObjectSelectionList extends Box {
 
 	public void setElements(final List<? extends SystemObject> objects) {
 		_objects = objects;
-		DefaultListModel defaultListModel = makeListModel(_objects);
+		DefaultListModel<SystemObject> defaultListModel = makeListModel(_objects);
 		List<? extends SystemObject> preSelectedValues = _preSelectedValues;
+		_jlist.setPrototypeCellValue(computeLongestPid(defaultListModel));
 		_jlist.setModel(defaultListModel);
 		selectElements(preSelectedValues);
 		updateHeader();
 	}
 
 	/**
+	 * Gibt das Objekt mit der Pid zurück, die die breiteste Darstellung hat (um die Länge der horizontalen Scrollbar zu berechnen)
+	 * @param model
+	 * @return
+	 */
+	private SystemObject computeLongestPid(final DefaultListModel<SystemObject> model) {
+		DefaultListCellRenderer renderer = new DefaultListCellRenderer(){
+			@Override
+			public Component getListCellRendererComponent(final JList<?> list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+				SystemObject obj = (SystemObject) value;
+				Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				if(_listRenderer != null) {
+					setText(_listRenderer.getText(obj));
+					setIcon(_listRenderer.getIcon(obj));
+				}
+				return component;
+			}
+		};
+		int maxWidth = -1;
+		int maxIndex = -1;
+		for (int i = 0; i < model.size(); i++) {
+			Component component = renderer.getListCellRendererComponent(_jlist, model.get(i), i, false, false);
+			int width = component.getPreferredSize().width;
+			if(width > maxWidth){
+				maxWidth = width;
+				maxIndex = i;
+			}
+		}
+		if(maxIndex != -1){
+			return model.get(maxIndex);
+		}
+		return null;
+	}
+
+	/**
 	 * Erzeugt aus einer Liste von Objekten ein DefaultListModel zum Anzeigen der Objekte in einer JList.
 	 *
 	 * @param list Liste, die in einer JList angezeigt werden sollen
-	 *
 	 * @return DefaultListModel, welches in einer JList angezeigt werden kann
 	 */
-	private DefaultListModel makeListModel(List<? extends SystemObject> list) {
-		DefaultListModel dlm = new DefaultListModel();
+	private DefaultListModel<SystemObject> makeListModel(List<? extends SystemObject> list) {
+		DefaultListModel<SystemObject> dlm = new DefaultListModel<>();
 		String filter = _filterTextField.getText();
-		Pattern pattern = null;
-		long id = 0;
+		final Pattern pattern;
+		final long id;
 		if(!filter.isEmpty()) {
+			Pattern tmpPattern = null;
 			try {
-//				if(filter.startsWith("/") && filter.endsWith("/")){
-//					pattern = Pattern.compile(filter.substring(1, filter.length()-1), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
-//				}
-//				else {
-				pattern = Pattern.compile(filter, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE | Pattern.LITERAL);
-//				}
-//				_filterTextField.setToolTipText(null);
-//				_filterTextField.setForeground(null);
+				if(filter.length() > 2 && filter.startsWith("/") && filter.endsWith("/")) {
+					tmpPattern = Pattern.compile(filter.substring(1, filter.length() - 1), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+				}
+				else {
+					tmpPattern = Pattern.compile(filter, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE | Pattern.LITERAL);
+				}
+				_filterTextField.setToolTipText(null);
+				_filterTextField.setForeground(null);
 			}
-			catch(PatternSyntaxException e){
-//				_filterTextField.setToolTipText(e.getMessage());
-//				_filterTextField.setForeground(Color.red);
+			catch(PatternSyntaxException e) {
+				_filterTextField.setToolTipText(e.getMessage());
+				_filterTextField.setForeground(Color.red);
 			}
+			long tmpId = 0;
 			try {
-				id = Long.parseLong(filter);
+				tmpId = Long.parseLong(filter);
 			}
 			catch(NumberFormatException ignored) {
 			}
+			
+			pattern = tmpPattern;
+			id = tmpId;
 		}
-		for(final SystemObject object : list) {
-			if(pattern == null 
-					|| pattern.matcher(object.getPid()).find()  
-					|| pattern.matcher(object.getName()).find()  
-					|| id == object.getId()) {
-				dlm.addElement(object);
-			}
+		else {
+			pattern = null;
+			id = 0;
+		}
+		_cellRenderer.setPattern(pattern);
+		if(pattern != null || id != 0) {
+			list.parallelStream().filter(it -> matches(pattern, id, it)).forEachOrdered(dlm::addElement);
+		}
+		else {
+			dlm.ensureCapacity(list.size());
+			list.forEach(dlm::addElement);
 		}
 		return dlm;
+	}
+
+	private static boolean matches(final Pattern pattern, final long id, final SystemObject object) {
+		return pattern == null
+				|| pattern.matcher(object.getPid()).find()
+				|| pattern.matcher(object.getName()).find()
+				|| id == object.getId();
 	}
 
 	public List<? extends SystemObject> getElements() {
@@ -315,5 +358,42 @@ public class SystemObjectSelectionList extends Box {
 
 	public void setSelectionMode(final int selectionMode) {
 		_jlist.setSelectionMode(selectionMode);
+	}
+
+	private class MyListCellRenderer extends DefaultListCellRenderer {
+		private Pattern _pattern;
+
+		@Override
+		public Component getListCellRendererComponent(final JList<?> list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+			SystemObject obj = (SystemObject) value;
+			super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			if(_listRenderer != null) {
+				setText(_listRenderer.getText(obj));
+				setIcon(_listRenderer.getIcon(obj));
+			}
+			return this;
+		}
+
+		public void setPattern(final Pattern pattern) {
+			_pattern = pattern;
+		}
+
+		public Pattern getPattern() {
+			return _pattern;
+		}
+
+		@Override
+		public void setText(final String text) {
+			super.setText(generateHtml(_pattern, text));
+		}
+
+		private String generateHtml(final Pattern pattern, final String text) {
+			if(pattern == null) return text;
+			StringBuilder builder = new StringBuilder(text.length() + 32);
+			Matcher matcher = pattern.matcher(text);
+			builder.append("<html>");
+			builder.append(matcher.replaceFirst("<font color=\"red\">$0</font>"));
+			return builder.toString();
+		}
 	}
 }

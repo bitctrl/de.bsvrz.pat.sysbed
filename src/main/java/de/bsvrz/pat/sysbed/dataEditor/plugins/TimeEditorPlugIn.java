@@ -94,6 +94,7 @@ public class TimeEditorPlugIn extends ComboBoxEditorPlugIn {
 
 	@Override
 	public boolean supportsData(final Data data) {
+		if(!data.isPlain()) return false;
 		if(data.getAttributeType() instanceof StringAttributeType) {
 			return data.getAttributeType().getPid().equals("att.uhrzeit");
 		}

@@ -167,14 +167,15 @@ public class AppSubscriptionInfoFrame extends JFrame{
 
 	private static DavApplication findDav(final ClientApplication application) {
 		List<SystemObject> davs = application.getDataModel().getType(Pid.Type.DAV_APPLICATION).getObjects();
-		for(SystemObject dav : davs) {
-			if(dav instanceof DavApplication) {
-				DavApplication davApplication = (DavApplication)dav;
-				MutableSet clientApplicationSet = davApplication.getClientApplicationSet();
-				if(clientApplicationSet.getElements().contains(application)) return davApplication;
-			}
-		}
-		return null;
+		
+		// parallelStream() da .getElements() von Datenverteiler-Mengen einige Zeit dauern kann
+		
+		return davs.stream()
+				.map(it -> (DavApplication)it)
+				.parallel()
+				.filter(it -> it.getClientApplicationSet().getElements().contains(application))
+				.findAny()
+				.orElse(null);
 	}
 
 	private class RefreshListener implements ActionListener {

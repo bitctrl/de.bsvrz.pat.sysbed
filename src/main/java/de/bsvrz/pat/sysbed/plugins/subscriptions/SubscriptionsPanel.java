@@ -209,7 +209,9 @@ public class SubscriptionsPanel extends JPanel {
 		_label.setText(
 				"<html>" +
 				"<b>Zentraldatenverteiler: </b>" + davInfo.getCentralDavPidOrId() + "<br>" +
-				"<b>Verbindung über: </b>" + davInfo.getConnectionDavPidOrId()
+				"<b>Verbindung über: </b>" + davInfo.getConnectionDavPidOrId() + "<br>" +
+				"<b>Als Benutzer: </b>" + davInfo.getUserPidOrId() + "<br>" +
+				"<b>Wichtung: </b>" + davInfo.getThroughputResistance()
 		);
 	}
 

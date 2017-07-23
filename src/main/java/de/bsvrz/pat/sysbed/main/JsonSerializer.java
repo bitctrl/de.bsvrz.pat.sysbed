@@ -80,7 +80,8 @@ public class JsonSerializer {
 		try {
 			if(object instanceof BigDecimal) {
 				BigDecimal bigDecimal = (BigDecimal) object;
-				bigDecimal.divide(new BigDecimal(((IntegerAttributeType) result.getAttributeType()).getRange().getConversionFactor()));
+				BigDecimal divisor = getFactor((IntegerAttributeType) result.getAttributeType());
+				bigDecimal = bigDecimal.divide(divisor, 0, BigDecimal.ROUND_HALF_UP);
 				result.asUnscaledValue().set(bigDecimal.longValueExact());
 			}
 			else {
@@ -126,7 +127,7 @@ public class JsonSerializer {
 			}
 			else {
 				BigDecimal bigDecimal = new BigDecimal(value.longValue());
-				return bigDecimal.multiply(new BigDecimal(((IntegerAttributeType) attributeType).getRange().getConversionFactor()));
+				return bigDecimal.multiply(getFactor((IntegerAttributeType) attributeType));
 			}
 		}
 		else if(attributeType instanceof DoubleAttributeType) {
@@ -135,6 +136,11 @@ public class JsonSerializer {
 		else {
 			return subData.asTextValue().getText();
 		}
+	}
+
+	private static BigDecimal getFactor(final IntegerAttributeType attributeType) {
+		double conversionFactor = attributeType.getRange().getConversionFactor();
+		return new BigDecimal(String.valueOf(conversionFactor)); // In String konvertieren, sonst entstehen ungenauigkeiten, siehe BigDecimal-Dokumentation
 	}
 
 	public static void jsonToData(final Data data, final String text) throws JsonException {

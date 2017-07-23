@@ -142,6 +142,7 @@ public class DateEditorPlugIn extends ComboBoxEditorPlugIn {
 
 	@Override
 	public boolean supportsData(final Data data) {
+		if(!data.isPlain()) return false;
 		if(data.getAttributeType() instanceof TimeAttributeType) {
 			TimeAttributeType timeAttributeType = (TimeAttributeType) data.getAttributeType();
 			return !timeAttributeType.isRelative();

@@ -29,13 +29,14 @@ package de.bsvrz.pat.sysbed.main;
 import de.bsvrz.dav.daf.main.config.SystemObject;
 
 import javax.swing.JPopupMenu;
+import java.util.List;
 
 /**
  * @author Kappich Systemberatung
  * @version $Revision: 0000 $
  */
 public interface SelectionModel {
-	public SystemObject[] getSelectedObjects();
+	public List<SystemObject> getSelectedObjects();
 
 	void setComponentPopupMenu(JPopupMenu popup);
 }

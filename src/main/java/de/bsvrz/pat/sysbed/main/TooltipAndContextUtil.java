@@ -139,7 +139,7 @@ public class TooltipAndContextUtil {
 
 					@Override
 					public void actionPerformed(final ActionEvent e) {
-						SystemObject systemObject = systemObjectList.getSelectedObjects()[0];
+						SystemObject systemObject = systemObjectList.getSelectedObjects().get(0);
 						JFrame jFrame = new JFrame("Mengen von " + systemObject);
 						final SystemObjectSelectionList list = new SystemObjectSelectionList("Menge", "Mengen");
 						final SystemObjectSelectionList elements = new SystemObjectSelectionList("Objekte", "Objekte");
@@ -173,7 +173,7 @@ public class TooltipAndContextUtil {
 				new PopupMenuListener() {
 					@Override
 					public void popupMenuWillBecomeVisible(final PopupMenuEvent e) {
-						int length = systemObjectList.getSelectedObjects().length;
+						int length = systemObjectList.getSelectedObjects().size();
 						Component[] subElements = popup.getComponents();
 						for(Component menuElement : subElements) {
 							if(menuElement instanceof JMenuItem) {

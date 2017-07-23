@@ -60,13 +60,14 @@ public class ComboBoxEditorPlugIn extends PlainEditorPlugIn {
 			
 			comboBoxAttributeModified(comboBox, suffixBox, data, false);
 
-			comboBox.addFocusListener(
-					new FocusAdapter() {
-						public void focusLost(FocusEvent e) {
-							comboBoxAttributeModified(comboBox, suffixBox, data, true);
-						}
-					}
-			);
+			FocusAdapter l = new FocusAdapter() {
+				public void focusLost(FocusEvent e) {
+					comboBoxAttributeModified(comboBox, suffixBox, data, true);
+				}
+			};
+			comboBox.addFocusListener(l);
+			comboBox.getEditor().getEditorComponent().addFocusListener(l);
+			
 			comboBox.addActionListener(
 					new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
