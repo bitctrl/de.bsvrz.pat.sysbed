@@ -103,16 +103,6 @@
         </dependency>
         <dependency>
             <groupId>de.bsvrz.sys</groupId>
-            <artifactId>de.bsvrz.sys.funclib.dataSerializer</artifactId>
-            <version>${kernsoftware.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>de.bsvrz.sys</groupId>
-            <artifactId>de.bsvrz.sys.funclib.communicationStreams</artifactId>
-            <version>${kernsoftware.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>de.bsvrz.sys</groupId>
             <artifactId>de.bsvrz.sys.funclib.application</artifactId>
             <version>${kernsoftware.version}</version>
         </dependency>
